@@ -1,67 +1,100 @@
-#! /usr/bin/python
-# Written by Dan Mandle http://dan.mandle.me September 2012
-# License: GPL 2.0
-# Updated by wolfg1969 https://guoyong.dev May 2020
+import serial  # import serial pacakge
+from time import sleep
+import webbrowser  # import package for opening link in browser
+import sys  # import system package
+import csv
+import pygame, sys
+from pygame.locals import *
+import random
 
-import os
-import gps
-from gps import *
-from time import *
-import time
-import threading
+pygame.init()
+windowSurface = pygame.display.set_mode((800, 480))
 
-gpsd = None  # seting the global variable
-
-os.system('clear')  # clear the terminal (optional)
+myfont = pygame.font.SysFont("cambria", 100)
 
 
-class GpsPoller(threading.Thread):
-    def __init__(self):
-        threading.Thread.__init__(self)
-        global gpsd  # bring it in scope
-        gpsd = gps(mode=WATCH_ENABLE)  # starting the stream of info
-        self.current_value = None
-        self.running = True  # setting the thread running to true
+def GPS_Info():
+    global NMEA_buff
+    global lat_in_degrees
+    global long_in_degrees
+    nmea_time = []
+    nmea_latitude = []
+    nmea_longitude = []
+    nmea_time = NMEA_buff[0]  # extract time from GPGGA string
+    nmea_latitude = NMEA_buff[1]  # extract latitude from GPGGA string
+    nmea_longitude = NMEA_buff[3]  # extract longitude from GPGGA string
 
-    def run(self):
-        global gpsd
-        while gpsp.running:
-            gpsd.next()  # this will continue to loop and grab EACH set of gpsd info to clear the buffer
+    print("NMEA Time: ", nmea_time, '\n')
+    print("NMEA Latitude:", nmea_latitude, "NMEA Longitude:", nmea_longitude, '\n')
+
+    lat = float(nmea_latitude)  # convert string into float for calculation
+    longi = float(nmea_longitude)  # convertr string into float for calculation
+
+    lat_in_degrees = convert_to_degrees(lat)  # get latitude in degree decimal format
+    long_in_degrees = convert_to_degrees(longi)  # get longitude in degree decimal format
 
 
-if __name__ == '__main__':
-    gpsp = GpsPoller()  # create the thread
-    try:
-        gpsp.start()  # start it up
-        while True:
-            # It may take a second or two to get good data
-            # print(gpsd.fix.latitude,', ',gpsd.fix.longitude,'  Time: ',gpsd.utc)
+# convert raw NMEA string into degree decimal format
+def convert_to_degrees(raw_value):
+    decimal_value = raw_value / 100.00
+    degrees = int(decimal_value)
+    mm_mmmm = (decimal_value - int(decimal_value)) / 0.6
+    position = degrees + mm_mmmm
+    position = "%.4f" % (position)
+    return position
 
-            os.system('clear')
 
-            print
-            print(' GPS reading')
-            print('----------------------------------------')
-            print('latitude    ', gpsd.fix.latitude)
-            print('longitude   ', gpsd.fix.longitude)
-            print('time utc    ', gpsd.utc, ' + ', gpsd.fix.time)
-            print('altitude (m)', gpsd.fix.altitude)
-            print('eps         ', gpsd.fix.eps)
-            print('epx         ', gpsd.fix.epx)
-            print('epv         ', gpsd.fix.epv)
-            print('ept         ', gpsd.fix.ept)
-            print('speed (m/s) ', gpsd.fix.speed)
-            print('speed (mph) ', gpsd.fix.speed * 2.237)
-            print('climb       ', gpsd.fix.climb)
-            print('track       ', gpsd.fix.track)
-            print('mode        ', gpsd.fix.mode)
-            print
-            print('sats        ', gpsd.satellites)
+gpgga_info = "$GPGGA,"
+ser = serial.Serial("/dev/ttyS0")  # Open port with baud rate
+GPGGA_buffer = 0
+NMEA_buff = 0
+lat_in_degrees = 0
+long_in_degrees = 0
 
-            time.sleep(5)  # set to whatever
+try:
+    while True:
+        received_data = (str)(ser.readline())  # read NMEA string received
+        GPGGA_data_available = received_data.find(gpgga_info)  # check for NMEA GPGGA string
+        if (GPGGA_data_available > 0):
+            GPGGA_buffer = received_data.split("$GPGGA,", 1)[1]  # store data coming after "$GPGGA," string
+            NMEA_buff = (GPGGA_buffer.split(','))  # store comma separated data in buffer
+            GPS_Info()  # get time, latitude, longitude
 
-    except (KeyboardInterrupt, SystemExit):  # when you press ctrl+c
-        print("\nKilling Thread...")
-        gpsp.running = False
-        gpsp.join()  # wait for the thread to finish what it's doing
-    print("Done.\nExiting.")
+            print("lat in degrees:", lat_in_degrees, " long in degree: ", long_in_degrees, '\n')
+            map_link = 'http://maps.google.com/?q=' + lat_in_degrees + ',' + long_in_degrees  # create link to plot location on Google map
+            print(
+                "<<<<<<<<press ctrl+c to plot location on google maps>>>>>>\n")  # press ctrl+c to plot on map and exit
+            print("------------------------------------------------------------\n")
+
+            windowSurface.fill((0, 0, 0))
+            for event in pygame.event.get():
+                if event.type == QUIT:
+                    pygame.quit()
+                    sys.exit()
+            with open('hello.csv', 'r') as csvfile:
+                reader = csv.reader(csvfile, skipinitialspace=True)
+                next(reader)
+                x = float(lat_in_degrees)
+                y = float(long_in_degrees)
+                for row in reader:
+                    if x >= float(row[4]) and y >= float(row[5]) and x < float(row[6]) and y < float(row[7]):
+                        value = float(row[3])
+
+                        text = str(value)
+                        print(value)
+                    else:
+
+                        value = 'o'
+            # render text
+            label = myfont.render(str(value), 1, (255, 255, 255))
+            windowSurface.blit(label, (20, 20))
+            label = myfont.render(lat_in_degrees, 1, (255, 255, 255))
+            windowSurface.blit(label, (50, 400))
+            label = myfont.render(long_in_degrees, 1, (255, 255, 255))
+            windowSurface.blit(label, (400, 400))
+            pygame.display.flip()
+
+except KeyboardInterrupt:
+    webbrowser.open(map_link)  # open current position information in google map
+    sys.exit(0)
+
