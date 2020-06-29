@@ -13,7 +13,11 @@ pygame.init()
 windowSurface = pygame.display.set_mode((800, 480))
 
 myfont = pygame.font.SysFont("cambria", 100)
-
+id = 0
+pH = 0
+p = 0
+k = 0
+mg = 0
 
 def GPS_Info():
     global NMEA_buff
@@ -90,18 +94,19 @@ try:
                     k = feature['properties']['K']
                     mg = feature['properties']['Mg']
                     print(id, pH, p, k, mg)
-                    value = pH
-                else:
-                    pH = 666
-                    p = 666
-                    id = 666
+
+
             # render text
-            label = myfont.render(str(id)+' ID', 1, (255, 255, 255))
+            label = myfont.render(str(id) + ' ID', 1, (255, 255, 255))
             windowSurface.blit(label, (20, 20))
             label = myfont.render(str(pH) + ' pH', 1, (255, 255, 255))
             windowSurface.blit(label, (20, 180))
             label = myfont.render(str(p) + ' P', 1, (255, 255, 255))
+            windowSurface.blit(label, (20, 240))
+            label = myfont.render(str(k) + ' K', 1, (255, 255, 255))
             windowSurface.blit(label, (20, 100))
+            label = myfont.render(str(mg) + ' Mg', 1, (255, 255, 255))
+            windowSurface.blit(label, (20, 320))
             label = myfont.render(lat_in_degrees, 1, (255, 255, 255))
             windowSurface.blit(label, (50, 400))
             label = myfont.render(long_in_degrees, 1, (255, 255, 255))
