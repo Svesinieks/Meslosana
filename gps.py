@@ -74,11 +74,11 @@ try:
                     pygame.quit()
                     sys.exit()
             # load GeoJSON file containing sectors
-            with open('LaukiGeojson/Ratuli.geojson') as f:
+            with open('LaukiGeojson/Balti.geojson') as f:
                 js = json.load(f)
 
             # construct point based on lon/lat returned by geocoder
-            point = Point(56.589614, 21.183464)
+            point = Point(float(lat_in_degrees), float(long_in_degrees))
 
             # check each polygon to see if it contains the point
             for feature in js['features']:
@@ -92,10 +92,16 @@ try:
                     print(id, pH, p, k, mg)
                     value = pH
                 else:
-                    value = 666
+                    pH = 666
+                    p = 666
+                    id = 666
             # render text
-            label = myfont.render(str(value), 1, (255, 255, 255))
+            label = myfont.render(str(id)+' ID', 1, (255, 255, 255))
             windowSurface.blit(label, (20, 20))
+            label = myfont.render(str(pH) + ' pH', 1, (255, 255, 255))
+            windowSurface.blit(label, (20, 180))
+            label = myfont.render(str(p) + ' P', 1, (255, 255, 255))
+            windowSurface.blit(label, (20, 100))
             label = myfont.render(lat_in_degrees, 1, (255, 255, 255))
             windowSurface.blit(label, (50, 400))
             label = myfont.render(long_in_degrees, 1, (255, 255, 255))
