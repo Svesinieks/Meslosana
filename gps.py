@@ -76,6 +76,9 @@ try:
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
+                elif event.type == MOUSEBUTTONUP:
+                    if event.button == 1:
+                        pygame.display.toggle_fullscreen()
             # construct point based on lon/lat returned by geocoder
             point = Point(float(lat_in_degrees), float(long_in_degrees))
             # load GeoJSON file containing sectors
