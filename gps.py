@@ -5,6 +5,8 @@ import sys  # import system package
 import csv
 import pygame, sys
 from pygame.locals import *
+import json
+from shapely.geometry import shape, Point
 import random
 
 pygame.init()
@@ -71,20 +73,26 @@ try:
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
-            with open('hello.csv', 'r') as csvfile:
-                reader = csv.reader(csvfile, skipinitialspace=True)
-                next(reader)
-                x = float(lat_in_degrees)
-                y = float(long_in_degrees)
-                for row in reader:
-                    if x >= float(row[4]) and y >= float(row[5]) and x < float(row[6]) and y < float(row[7]):
-                        value = float(row[3])
+            # load GeoJSON file containing sectors
+            with open('LaukiGeojson/Ratuli.geojson') as f:
+                js = json.load(f)
 
-                        text = str(value)
-                        print(value)
-                    else:
+            # construct point based on lon/lat returned by geocoder
+            point = Point(56.589614, 21.183464)
 
-                        value = 'o'
+            # check each polygon to see if it contains the point
+            for feature in js['features']:
+                polygon = shape(feature['geometry'])
+                if polygon.contains(point):
+                    id = feature['properties']['ID']
+                    pH = feature['properties']['pH']
+                    p = feature['properties']['P']
+                    k = feature['properties']['K']
+                    mg = feature['properties']['Mg']
+                    print(id, pH, p, k, mg)
+                    value = pH
+                else:
+                    value = 666
             # render text
             label = myfont.render(str(value), 1, (255, 255, 255))
             windowSurface.blit(label, (20, 20))
