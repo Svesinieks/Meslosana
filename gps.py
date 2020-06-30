@@ -9,6 +9,28 @@ import json
 from shapely.geometry import shape, Point
 import random
 
+with open('LaukiGeojson/Balti.geojson') as f:
+    js = json.load(f)
+minx = 9999
+miny = 9999
+maxx = 0
+maxy = 0
+for feature in js['features']:
+        cord = feature['geometry']['coordinates'][0]
+        i = 0
+
+        while i < len(cord):
+                if minx > cord[i][0]:
+                        minx = cord[i][0]
+                if maxx < cord[i][0]:
+                        maxx = cord[i][0]
+                if miny > cord[i][1]:
+                        miny = cord[i][1]
+                if maxy < cord[i][1]:
+                        maxy = cord[i][1]
+
+                i += 1
+
 pygame.init()
 windowSurface = pygame.display.set_mode((800, 480))
 myfont = pygame.font.SysFont("cambria", 100)
@@ -85,6 +107,7 @@ try:
             with open('LaukiGeojson/Paraugu_dati.geojson') as f:
                 js = json.load(f)
             # check each polygon to see if it contains the point
+            point = Point(float(56.12), float(21.09))
             for feature in js['features']:
                 polygon = shape(feature['geometry'])
                 if polygon.contains(point):
@@ -93,9 +116,41 @@ try:
                     p = feature['properties']['P']
                     k = feature['properties']['K']
                     mg = feature['properties']['Mg']
-                    print(id, pH, p, k, mg)
+                cord = feature['geometry']['coordinates'][0]
+                i = 0
+                x = 56.574198
+                y = 21.155038
+                while i < len(cord) - 1:
+                    scale = max(maxx - minx, maxy - miny)
 
+                    px = cord[i][0]
+                    py = cord[i][1]
+                    px -= (maxx + minx) / 2
+                    py -= (maxy + miny) / 2
+                    px1 = cord[i + 1][0]
+                    py1 = cord[i + 1][1]
+                    px1 -= (maxx + minx) / 2
+                    py1 -= (maxy + miny) / 2
+                    px /= scale / 100
+                    py /= scale / 58
+                    py += 200
+                    px += 650
+                    px1 /= scale / 100
+                    py1 /= scale / 58
+                    py1 += 200
+                    px1 += 650
 
+                    pygame.draw.line(windowSurface, (255, 255, 255), (px, py), (px1, py1))
+
+                    i += 1
+            x -= (maxx + minx) / 2
+            x /= scale / 100
+            x += 650
+            y -= (maxy + miny) / 2
+            y /= scale / 58
+            y += 200
+            pygame.draw.rect(windowSurface, (255, 0, 0),
+                                 (x, y, 3, 3))
             # render text
 
 
