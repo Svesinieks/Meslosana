@@ -118,8 +118,8 @@ try:
                     mg = feature['properties']['Mg']
                 cord = feature['geometry']['coordinates'][0]
                 i = 0
-                x = 56.574198
-                y = 21.155038
+                x = float(lat_in_degrees)
+                y = float(long_in_degrees)
                 while i < len(cord) - 1:
                     scale = max(maxx - minx, maxy - miny)
 
