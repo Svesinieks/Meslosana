@@ -107,7 +107,7 @@ try:
             with open('LaukiGeojson/Paraugu_dati.geojson') as f:
                 js = json.load(f)
             # check each polygon to see if it contains the point
-            point = Point(float(56.12), float(21.09))
+            point = Point(float(lat_in_degrees), float(long_in_degrees))
             for feature in js['features']:
                 polygon = shape(feature['geometry'])
                 if polygon.contains(point):
