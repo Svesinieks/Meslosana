@@ -11,9 +11,12 @@ import random
 
 pygame.init()
 windowSurface = pygame.display.set_mode((800, 480))
-
 myfont = pygame.font.SysFont("cambria", 100)
-
+id = 0
+pH = 0
+p = 0
+k = 0
+mg = 0
 
 def GPS_Info():
     global NMEA_buff
@@ -73,13 +76,14 @@ try:
                 if event.type == QUIT:
                     pygame.quit()
                     sys.exit()
+                elif event.type == MOUSEBUTTONUP:
+                    if event.button == 1:
+                        pygame.display.toggle_fullscreen()
+            # construct point based on lon/lat returned by geocoder
+            point = Point(float(lat_in_degrees), float(long_in_degrees))
             # load GeoJSON file containing sectors
             with open('LaukiGeojson/Balti.geojson') as f:
                 js = json.load(f)
-
-            # construct point based on lon/lat returned by geocoder
-            point = Point(float(lat_in_degrees), float(long_in_degrees))
-
             # check each polygon to see if it contains the point
             for feature in js['features']:
                 polygon = shape(feature['geometry'])
@@ -90,22 +94,32 @@ try:
                     k = feature['properties']['K']
                     mg = feature['properties']['Mg']
                     print(id, pH, p, k, mg)
-                    value = pH
-                else:
-                    pH = 666
-                    p = 666
-                    id = 666
+
+
             # render text
-            label = myfont.render(str(id)+' ID', 1, (255, 255, 255))
+
+
+
+
+
+            label = myfont.render('ID '+str(id), 1, (255, 255, 255))
             windowSurface.blit(label, (20, 20))
-            label = myfont.render(str(pH) + ' pH', 1, (255, 255, 255))
-            windowSurface.blit(label, (20, 180))
-            label = myfont.render(str(p) + ' P', 1, (255, 255, 255))
-            windowSurface.blit(label, (20, 100))
+            label = myfont.render(str(pH)+' pH', 1, (255, 255, 255))
+            windowSurface.blit(label, (20, 160))
+            label = myfont.render(str(p)+' P', 1, (255, 255, 255))
+            windowSurface.blit(label, (20, 240))
+            label = myfont.render(str(k)+' K', 1, (255, 255, 255))
+            windowSurface.blit(label, (20, 90))
+            label = myfont.render(str(mg)+' Mg', 1, (255, 255, 255))
+            windowSurface.blit(label, (20, 310))
             label = myfont.render(lat_in_degrees, 1, (255, 255, 255))
-            windowSurface.blit(label, (50, 400))
+            windowSurface.blit(label, (70, 400))
             label = myfont.render(long_in_degrees, 1, (255, 255, 255))
-            windowSurface.blit(label, (400, 400))
+            windowSurface.blit(label, (470, 400))
+
+            pygame.draw.line(windowSurface,(255,255,255),(0,390),(800,390),2)
+            pygame.draw.line(windowSurface, (255, 255, 255), (400, 0), (400, 390), 2)
+
             pygame.display.flip()
 
 except KeyboardInterrupt:
