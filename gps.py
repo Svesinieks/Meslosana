@@ -1,31 +1,50 @@
 import serial  # import serial pacakge
-from time import sleep
-import webbrowser  # import package for opening link in browser
-import sys  # import system package
-import csv
 import pygame, sys
 from pygame.locals import *
 import json
 from shapely.geometry import shape, Point
-import random
 import RPi.GPIO as GPIO
 from time import sleep
 
-with open('LaukiGeojson/Balti.geojson') as f:
-    js = json.load(f)
-minx = 9999
-miny = 9999
-maxx = 0
-maxy = 0
-GPIO.setwarnings(False)
+# declare variables
+minx = 9999 # minimum x coordinate from geojson coordinates
+miny = 9999 # minimum y coordinate from geojson coordinates
+maxx = 0 # maximum x coordinate from geojson coordinates
+maxy = 0 # maximum y coordinate from geojson coordinates
+GPIO.setwarnings(False) # No warning for GPIO already in use
 GPIO.setmode(GPIO.BCM)
-buzzer = 23
+buzzer = 23 # buzzer connected to pin 23
 GPIO.setup(buzzer, GPIO.OUT)
 
+width = 800 # screen width
+height = 480 # screen height
+
+# display starting values
+mapKg = 0
+mapPro = 0
+kclKg = 0
+kclPro = 0
+catHa = 0
+caPro = 0
+
+# for id comparison for buzzer
+idTemp = 0
+id = 999
+
+# map scale
+scalex = 400
+scaley = 236
+
+pygame.init()
+windowSurface = pygame.display.set_mode((width, height))
+myfont = pygame.font.SysFont("cambria", 100) #font ant font size
+
+# finds minx, miny, maxx, maxy and calculates map scale
+with open('LaukiGeojson/Paraugu_dati.geojson') as f:
+    js = json.load(f)
 for feature in js['features']:
     cord = feature['geometry']['coordinates'][0]
     i = 0
-
     while i < len(cord):
         if minx > cord[i][0]:
             minx = cord[i][0]
@@ -35,24 +54,8 @@ for feature in js['features']:
             miny = cord[i][1]
         if maxy < cord[i][1]:
             maxy = cord[i][1]
-
         i += 1
-scale = max(maxx - minx, maxy - miny)
-
-pygame.init()
-windowSurface = pygame.display.set_mode((800, 480))
-myfont = pygame.font.SysFont("cambria", 100)
-mapKg = 0
-mapPro = 0
-kclKg = 0
-kclPro = 0
-catHa = 0
-caPro = 0
-idTemp = 0
-id = 999
-scalex = 400
-scaley = 236
-
+scale = max(maxx - minx, maxy - miny) # map scale
 
 def GPS_Info():
     global NMEA_buff
@@ -74,7 +77,6 @@ def GPS_Info():
     lat_in_degrees = convert_to_degrees(lat)  # get latitude in degree decimal format
     long_in_degrees = convert_to_degrees(longi)  # get longitude in degree decimal format
 
-
 # convert raw NMEA string into degree decimal format
 def convert_to_degrees(raw_value):
     decimal_value = raw_value / 100.00
@@ -84,7 +86,6 @@ def convert_to_degrees(raw_value):
     position = "%.4f" % (position)
     return position
 
-
 gpgga_info = "$GPGGA,"
 ser = serial.Serial("/dev/ttyS0")  # Open port with baud rate
 GPGGA_buffer = 0
@@ -92,144 +93,152 @@ NMEA_buff = 0
 lat_in_degrees = 0
 long_in_degrees = 0
 
-try:
-    while True:
-        received_data = (str)(ser.readline())  # read NMEA string received
-        GPGGA_data_available = received_data.find(gpgga_info)  # check for NMEA GPGGA string
-        if (GPGGA_data_available > 0):
-            GPGGA_buffer = received_data.split("$GPGGA,", 1)[1]  # store data coming after "$GPGGA," string
-            NMEA_buff = (GPGGA_buffer.split(','))  # store comma separated data in buffer
-            GPS_Info()  # get time, latitude, longitude
+while True:
+    received_data = (str)(ser.readline())  # read NMEA string received
+    GPGGA_data_available = received_data.find(gpgga_info)  # check for NMEA GPGGA string
+    if (GPGGA_data_available > 0):
+        GPGGA_buffer = received_data.split("$GPGGA,", 1)[1]  # store data coming after "$GPGGA," string
+        NMEA_buff = (GPGGA_buffer.split(','))  # store comma separated data in buffer
+        GPS_Info()  # get time, latitude, longitude
+        # print("lat in degrees:", lat_in_degrees, " long in degree: ", long_in_degrees, '\n')
 
-            # print("lat in degrees:", lat_in_degrees, " long in degree: ", long_in_degrees, '\n')
-            # map_link = 'http://maps.google.com/?q=' + lat_in_degrees + ',' + long_in_degrees  # create link to plot location on Google map
-            # print(
-            # "<<<<<<<<press ctrl+c to plot location on google maps>>>>>>\n")  # press ctrl+c to plot on map and exit
-            # print("------------------------------------------------------------\n")
+        windowSurface.fill((0, 0, 0)) # fill screen black to prevent overlay
+        mouse = pygame.mouse.get_pos() # mouse position
+        click = pygame.mouse.get_pressed() # determane if mouse clicked, format (0,0,0)
+        # if(mouse[0]>0 and mouse[0]<200 and mouse[1] > 0 and mouse[1]<90):
+        # if(click[0] == 1):
+        # pygame.display.toggle_fullscreen()
 
-            windowSurface.fill((0, 0, 0))
-            mouse = pygame.mouse.get_pos()
-            click = pygame.mouse.get_pressed()
-            # if(mouse[0]>0 and mouse[0]<200 and mouse[1] > 0 and mouse[1]<90):
-            # if(click[0] == 1):
-            # pygame.display.toggle_fullscreen()
-            if (mouse[0] > 600 and mouse[0] < 700 and mouse[1] > 390 and mouse[1] < 480):
-                if (click[0] == 1):
-                    scalex *= 1.2
-                    scaley *= 1.2
-            if (mouse[0] > 700 and mouse[0] < 800 and mouse[1] > 390 and mouse[1] < 480):
-                if (click[0] == 1):
-                    scalex /= 1.2
-                    scaley /= 1.2
-            xconst = (50 * scale / scalex) + ((maxx + minx) / 2)
-            yconst = (-5 * scale / scaley) + ((maxy + miny) / 2)
-            for event in pygame.event.get():
-                if event.type == QUIT:
-                    pygame.quit()
-                    sys.exit()
-                elif event.type == MOUSEBUTTONUP:
-                    if event.button == 1:
-                        if (mouse[0] > 0 and mouse[0] < 200 and mouse[1] > 0 and mouse[1] < 90):
-                            pygame.display.toggle_fullscreen()
+        # map zoom in
+        if (mouse[0] > 600 and mouse[0] < 700 and mouse[1] > 390 and mouse[1] < 480):
+            if (click[0] == 1):
+                scalex *= 1.2
+                scaley *= 1.2
+        # map zoom out
+        if (mouse[0] > 700 and mouse[0] < 800 and mouse[1] > 390 and mouse[1] < 480):
+            if (click[0] == 1):
+                scalex /= 1.2
+                scaley /= 1.2
 
-            # construct point based on lon/lat returned by geocoder
-            point = Point(float(lat_in_degrees), float(long_in_degrees))
-            # load GeoJSON file containing sectors
-            with open('LaukiGeojson/Paraugu_dati.geojson') as f:
-                js = json.load(f)
-            # check each polygon to see if it contains the point
-            point = Point(float(lat_in_degrees), float(long_in_degrees))
-            for feature in js['features']:
-                polygon = shape(feature['geometry'])
-                if polygon.contains(point):
-                    id = feature['properties']['ID']
-                    mapPro = feature['properties']['map%']
-                    mapKg = feature['properties']['mapkg/h']
-                    kclKg = feature['properties']['kclkg/ha']
-                    kclPro = feature['properties']['kcl%']
-                    catHa = feature['properties']['cat/ha']
-                    caPro = feature['properties']['ca%']
-                cord = feature['geometry']['coordinates'][0]
-                i = 0
-                x = float(lat_in_degrees)
-                y = float(long_in_degrees)
+        # x, y constantes for map to be centered
+        xconst = (50 * scale / scalex) + ((maxx + minx) / 2)
+        yconst = (-5 * scale / scaley) + ((maxy + miny) / 2)
 
-                movex = xconst - x
-                movey = yconst - y
-                while i < len(cord) - 1:
-                    px = cord[i][0] + movex
-                    py = cord[i][1] + movey
-                    px -= (maxx + minx) / 2
-                    py -= (maxy + miny) / 2
-                    px1 = cord[i + 1][0] + movex
-                    py1 = cord[i + 1][1] + movey
-                    px1 -= (maxx + minx) / 2
-                    py1 -= (maxy + miny) / 2
-                    px /= scale / scalex
-                    py /= scale / scaley
-                    py += 200
-                    px += 650
-                    px1 /= scale / scalex
-                    py1 /= scale / scaley
-                    py1 += 200
-                    px1 += 650
+        for event in pygame.event.get():
+            # top right exit button
+            if event.type == QUIT:
+                pygame.quit()
+                sys.exit()
+            # fullscreen button
+            elif event.type == MOUSEBUTTONUP:
+                if event.button == 1:
+                    if (mouse[0] > 0 and mouse[0] < 200 and mouse[1] > 0 and mouse[1] < 90):
+                        pygame.display.toggle_fullscreen()
 
-                    pygame.draw.line(windowSurface, (255, 255, 255), (px, py), (px1, py1))
+        # construct point based on lon/lat returned by geocoder
+        point = Point(float(lat_in_degrees), float(long_in_degrees))
+        # load GeoJSON file containing sectors
+        with open('LaukiGeojson/Paraugu_dati.geojson') as f:
+            js = json.load(f)
+        # check each polygon to see if it contains the point
+        point = Point(float(lat_in_degrees), float(long_in_degrees))
+        for feature in js['features']:
+            polygon = shape(feature['geometry'])
+            # read data from polygon
+            if polygon.contains(point):
+                id = feature['properties']['ID']
+                mapPro = feature['properties']['map%']
+                mapKg = feature['properties']['mapkg/h']
+                kclKg = feature['properties']['kclkg/ha']
+                kclPro = feature['properties']['kcl%']
+                catHa = feature['properties']['cat/ha']
+                caPro = feature['properties']['ca%']
 
-                    i += 1
+            cord = feature['geometry']['coordinates'][0] # get polygon coordinates
+            i = 0
+            x = float(lat_in_degrees)
+            y = float(long_in_degrees)
 
-            pygame.draw.circle(windowSurface, (255, 0, 0), (700, 195), 4)
-            pygame.draw.rect(windowSurface, (0, 0, 0),
-                             (0, 0, 600, 480))
-            pygame.draw.rect(windowSurface, (0, 0, 0),
-                             (0, 390, 800, 90))
-            # render text
+            # move map instead of dot for map to be centered
+            movex = xconst - x
+            movey = yconst - y
 
-            if (id != idTemp):
-                GPIO.output(buzzer, GPIO.HIGH)
-                sleep(0.5)
-                GPIO.output(buzzer, GPIO.LOW)
-                sleep(0.5)
-                idTemp = id
+            # calculate coordinates to pixel coordinates CAN BE OPTIMIZED BY PRECALCULATING
+            while i < len(cord) - 1:
+                px = cord[i][0] + movex
+                py = cord[i][1] + movey
+                px -= (maxx + minx) / 2
+                py -= (maxy + miny) / 2
+                px1 = cord[i + 1][0] + movex
+                py1 = cord[i + 1][1] + movey
+                px1 -= (maxx + minx) / 2
+                py1 -= (maxy + miny) / 2
+                px /= scale / scalex
+                py /= scale / scaley
+                py += 200
+                px += 650
+                px1 /= scale / scalex
+                py1 /= scale / scaley
+                py1 += 200
+                px1 += 650
 
-            label = myfont.render('MAP ', 1, (255, 255, 255))
-            windowSurface.blit(label, (20, 120))
-            label = myfont.render('KCl ', 1, (255, 255, 255))
-            windowSurface.blit(label, (20, 220))
-            label = myfont.render('Ca ', 1, (255, 255, 255))
-            windowSurface.blit(label, (20, 320))
+                pygame.draw.line(windowSurface, (255, 255, 255), (px, py), (px1, py1)) # draw line
+                i += 1
 
-            label = myfont.render('Kg/ha ', 1, (255, 255, 255))
-            windowSurface.blit(label, (205, 15))
-            label = myfont.render('% ', 1, (255, 255, 255))
-            windowSurface.blit(label, (470, 15))
+        pygame.draw.circle(windowSurface, (255, 0, 0), (700, 195), 4) # map centre
+        # black rectangles for map to stay in boundaries
+        pygame.draw.rect(windowSurface, (0, 0, 0),
+                        (0, 0, 600, 480))
+        pygame.draw.rect(windowSurface, (0, 0, 0),
+                        (0, 390, 800, 90))
 
-            label = myfont.render(str(mapKg), 1, (255, 255, 255))
-            windowSurface.blit(label, (220, 120))
-            label = myfont.render(str(kclKg), 1, (255, 255, 255))
-            windowSurface.blit(label, (220, 220))
-            label = myfont.render(str(catHa), 1, (255, 255, 255))
-            windowSurface.blit(label, (220, 320))
+        # turn on buzzer if entered different polygon by id
+        if (id != idTemp):
+            GPIO.output(buzzer, GPIO.HIGH)
+            sleep(0.5)
+            GPIO.output(buzzer, GPIO.LOW)
+            sleep(0.5)
+            idTemp = id
 
-            label = myfont.render(str(mapPro), 1, (255, 255, 255))
-            windowSurface.blit(label, (420, 120))
-            label = myfont.render(str(kclPro), 1, (255, 255, 255))
-            windowSurface.blit(label, (420, 220))
-            label = myfont.render(str(caPro), 1, (255, 255, 255))
-            windowSurface.blit(label, (420, 320))
+        # render text
+        label = myfont.render('MAP ', 1, (255, 255, 255))
+        windowSurface.blit(label, (20, 120))
+        label = myfont.render('KCl ', 1, (255, 255, 255))
+        windowSurface.blit(label, (20, 220))
+        label = myfont.render('Ca ', 1, (255, 255, 255))
 
-            pygame.draw.line(windowSurface, (255, 255, 255), (0, 390), (800, 390), 2)
-            pygame.draw.line(windowSurface, (255, 255, 255), (600, 0), (600, 480), 2)
-            pygame.draw.line(windowSurface, (255, 255, 255), (700, 390), (700, 480), 2)
-            pygame.draw.line(windowSurface, (255, 255, 255), (0, 90), (600, 90), 2)
-            pygame.draw.line(windowSurface, (255, 255, 255), (0, 190), (600, 190), 2)
-            pygame.draw.line(windowSurface, (255, 255, 255), (0, 290), (600, 290), 2)
-            pygame.draw.line(windowSurface, (255, 255, 255), (200, 390), (200, 0), 2)
-            pygame.draw.line(windowSurface, (255, 255, 255), (400, 390), (400, 0), 2)
+        windowSurface.blit(label, (20, 320))
+        label = myfont.render('Kg/ha ', 1, (255, 255, 255))
+        windowSurface.blit(label, (205, 15))
+        label = myfont.render('% ', 1, (255, 255, 255))
+        windowSurface.blit(label, (470, 15))
 
-            pygame.display.flip()
+        label = myfont.render(str(mapKg), 1, (255, 255, 255))
+        windowSurface.blit(label, (220, 120))
+        label = myfont.render(str(kclKg), 1, (255, 255, 255))
+        windowSurface.blit(label, (220, 220))
+        label = myfont.render(str(catHa), 1, (255, 255, 255))
+        windowSurface.blit(label, (220, 320))
 
-except KeyboardInterrupt:
-    # webbrowser.open(map_link)  # open current position information in google map
-    sys.exit(0)
+        label = myfont.render(str(mapPro), 1, (255, 255, 255))
+        windowSurface.blit(label, (420, 120))
+        label = myfont.render(str(kclPro), 1, (255, 255, 255))
+        windowSurface.blit(label, (420, 220))
+        label = myfont.render(str(caPro), 1, (255, 255, 255))
+        windowSurface.blit(label, (420, 320))
+
+        # draw lines
+        pygame.draw.line(windowSurface, (255, 255, 255), (0, 390), (800, 390), 2)
+        pygame.draw.line(windowSurface, (255, 255, 255), (600, 0), (600, 480), 2)
+        pygame.draw.line(windowSurface, (255, 255, 255), (700, 390), (700, 480), 2)
+        pygame.draw.line(windowSurface, (255, 255, 255), (0, 90), (600, 90), 2)
+        pygame.draw.line(windowSurface, (255, 255, 255), (0, 190), (600, 190), 2)
+        pygame.draw.line(windowSurface, (255, 255, 255), (0, 290), (600, 290), 2)
+        pygame.draw.line(windowSurface, (255, 255, 255), (200, 390), (200, 0), 2)
+        pygame.draw.line(windowSurface, (255, 255, 255), (400, 390), (400, 0), 2)
+
+        # update screen
+        pygame.display.flip()
+
+
 
