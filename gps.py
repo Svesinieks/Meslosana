@@ -35,6 +35,9 @@ id = 999
 scalex = 400
 scaley = 236
 
+# buzz time
+buzz = 0.5
+
 pygame.init()
 windowSurface = pygame.display.set_mode((width, height))
 myfont = pygame.font.SysFont("cambria", 100) #font ant font size
@@ -195,9 +198,9 @@ while True:
         # turn on buzzer if entered different polygon by id
         if (id != idTemp):
             GPIO.output(buzzer, GPIO.HIGH)
-            sleep(0.5)
+            sleep(buzz)
             GPIO.output(buzzer, GPIO.LOW)
-            sleep(0.5)
+            sleep(buzz)
             idTemp = id
 
         # render text
@@ -237,6 +240,10 @@ while True:
         pygame.draw.line(windowSurface, (255, 255, 255), (200, 390), (200, 0), 2)
         pygame.draw.line(windowSurface, (255, 255, 255), (400, 390), (400, 0), 2)
 
+        # +, -
+        pygame.draw.line(windowSurface, (255, 255, 255), (625, 435), (675, 435), 4)
+        pygame.draw.line(windowSurface, (255, 255, 255), (650, 411), (650, 459), 4)
+        pygame.draw.line(windowSurface, (255, 255, 255), (725, 435), (775, 435), 4)
         # update screen
         pygame.display.flip()
 
