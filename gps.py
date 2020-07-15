@@ -76,11 +76,15 @@ def GPS_Info():
     # print("NMEA Time: ", nmea_time, '\n')
     # print("NMEA Latitude:", nmea_latitude, "NMEA Longitude:", nmea_longitude, '\n')
 
-    lat = float(nmea_latitude)  # convert string into float for calculation
-    longi = float(nmea_longitude)  # convertr string into float for calculation
+    if nmea_latitude != '':
+        lat = float(nmea_latitude)  # convert string into float for calculation
+        longi = float(nmea_longitude)  # convertr string into float for calculation
 
-    lat_in_degrees = convert_to_degrees(lat)  # get latitude in degree decimal format
-    long_in_degrees = convert_to_degrees(longi)  # get longitude in degree decimal format
+        lat_in_degrees = convert_to_degrees(lat)  # get latitude in degree decimal format
+        long_in_degrees = convert_to_degrees(longi)  # get longitude in degree decimal format
+    else:
+        lat_in_degrees = 0
+        long_in_degrees = 0
 
 
 # convert raw NMEA string into degree decimal format
@@ -175,33 +179,37 @@ while True:
             movey = yconst - y
 
             # calculate coordinates to pixel coordinates CAN BE OPTIMIZED BY PRECALCULATING
-            while i < len(cord) - 1:
-                px = cord[i][0] + movex
-                py = cord[i][1] + movey
-                px -= (maxx + minx) / 2
-                py -= (maxy + miny) / 2
-                px1 = cord[i + 1][0] + movex
-                py1 = cord[i + 1][1] + movey
-                px1 -= (maxx + minx) / 2
-                py1 -= (maxy + miny) / 2
-                px /= scale / scalex
-                py /= scale / scaley
-                py += 200
-                px += 650
-                px1 /= scale / scalex
-                py1 /= scale / scaley
-                py1 += 200
-                px1 += 650
+            if lat_in_degrees != 0:
+                while i < len(cord) - 1:
+                    px = cord[i][0] + movex
+                    py = cord[i][1] + movey
+                    px -= (maxx + minx) / 2
+                    py -= (maxy + miny) / 2
+                    px1 = cord[i + 1][0] + movex
+                    py1 = cord[i + 1][1] + movey
+                    px1 -= (maxx + minx) / 2
+                    py1 -= (maxy + miny) / 2
+                    px /= scale / scalex
+                    py /= scale / scaley
+                    py += 200
+                    px += 650
+                    px1 /= scale / scalex
+                    py1 /= scale / scaley
+                    py1 += 200
+                    px1 += 650
 
-                pygame.draw.line(windowSurface, (255, 255, 255), (px, py), (px1, py1))  # draw line
-                i += 1
+                    pygame.draw.line(windowSurface, (255, 255, 255), (px, py), (px1, py1))  # draw line
+                    i += 1
 
-        pygame.draw.circle(windowSurface, (255, 0, 0), (700, 195), 4)  # map centre
-        # black rectangles for map to stay in boundaries
-        pygame.draw.rect(windowSurface, (0, 0, 0),
-                         (0, 0, 600, 480))
-        pygame.draw.rect(windowSurface, (0, 0, 0),
-                         (0, 390, 800, 90))
+                pygame.draw.circle(windowSurface, (255, 0, 0), (700, 195), 4)  # map centre
+                # black rectangles for map to stay in boundaries
+                pygame.draw.rect(windowSurface, (0, 0, 0),
+                                 (0, 0, 600, 480))
+                pygame.draw.rect(windowSurface, (0, 0, 0),
+                                 (0, 390, 800, 90))
+            else:
+                label = myfont.render('Nav signāls! ', 1, (255, 255, 255))
+                windowSurface.blit(label, (700, 195))
 
         # turn on buzzer if entered different polygon by id
         if (id != idTemp):
