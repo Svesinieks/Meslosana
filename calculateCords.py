@@ -1,7 +1,7 @@
 from koordinates import LKSToLatLon
 import json
 
-file = 'LaukiGeojson/Dizzoni_3.geojson'
+file = 'LaukiGeojson/Rozlejas_8.geojson'
 
 def cords(file):
     cords = []

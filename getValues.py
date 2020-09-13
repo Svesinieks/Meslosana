@@ -2,8 +2,8 @@
 import json
 import csv
 
-GEOJSON_FILE = 'LaukiGeojson/Zemdegas.geojson'
-CSV_FILE = 'LaukiAnalizes/Zemdegas.csv'
+GEOJSON_FILE = 'LaukiGeojson/Paraugu_dati.geojson'
+CSV_FILE = 'LaukiAnalizes/Paraugu_dati.csv'
 
 with open(GEOJSON_FILE, encoding='utf8') as f:
     geo_data = json.load(f)

@@ -30,6 +30,6 @@ with open('LaukiGeojson/Paraugu_dati.geojson', 'r+') as f:
                 json.dump(data, f, indent=4)
                 f.truncate()
             j +=1
-print(feature['properties'])
+print(feature['properties']['mapkg/h'])
 
 
