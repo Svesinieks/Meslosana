@@ -82,7 +82,7 @@ while not exit:
                 if buzz < 4:
                     buzz *=2
             elif (mouse[0] > 750 and mouse[0] < 800 and mouse[1] > 100 and mouse[1] < 150):
-                if buzz > 0.25:
+                if buzz > 0.125:
                     buzz/=2
             elif (mouse[0] > 0 and mouse[0] < 200 and mouse[1] > 0 and mouse[1] < 50):
                 izvele = 1
