@@ -3,7 +3,10 @@ import sys
 import json
 from shapely.geometry import shape, Point, Polygon
 from poligoni import poligoni, caMa, caMi, mapMa, mapMi, kclMa, kclMi
-import numpy as np
+
+#import serial  # import serial pacakge
+#import RPi.GPIO as GPIO
+from time import sleep
 
 laukumi = poligoni
 
