@@ -30,6 +30,18 @@ windowSurface = pygame.display.set_mode((800, 480))
 
 myfont2 = pygame.font.SysFont("cambria", 50)
 
+
+#
+'''
+GPIO.setwarnings(False)  # No warning for GPIO already in use
+GPIO.setmode(GPIO.BCM)
+buzzer = 23  # buzzer connected to pin 23
+GPIO.setup(buzzer, GPIO.OUT)
+gpgga_info = "$GPGGA,"
+ser = serial.Serial("/dev/ttyS0")  # Open port with baud rate
+GPGGA_buffer = 0
+NMEA_buff = 0
+'''
 #
 lat_in_degrees = 56.580603    #0
 long_in_degrees = 21.157510   #0
@@ -48,29 +60,78 @@ kclKilo = myfont2.render('KCl kg/ha', 1, (255, 255, 255))
 izvele = 1
 exit = False
 
+'''
+def GPS_Info():
+    global NMEA_buff
+    global lat_in_degrees
+    global long_in_degrees
+    nmea_time = []
+    nmea_latitude = []
+    nmea_longitude = []
+    nmea_time = NMEA_buff[0]  # extract time from GPGGA string
+    nmea_latitude = NMEA_buff[1]  # extract latitude from GPGGA string
+    nmea_longitude = NMEA_buff[3]  # extract longitude from GPGGA string
+
+    # print("NMEA Time: ", nmea_time, '\n')
+    # print("NMEA Latitude:", nmea_latitude, "NMEA Longitude:", nmea_longitude, '\n')
+
+    if nmea_latitude != '':
+        lat = float(nmea_latitude)  # convert string into float for calculation
+        longi = float(nmea_longitude)  # convertr string into float for calculation
+
+        lat_in_degrees = convert_to_degrees(lat)  # get latitude in degree decimal format
+        long_in_degrees = convert_to_degrees(longi)  # get longitude in degree decimal format
+    else:
+        lat_in_degrees = 0
+        long_in_degrees = 0
+
+
+# convert raw NMEA string into degree decimal format
+def convert_to_degrees(raw_value):
+    decimal_value = raw_value / 100.00
+    degrees = int(decimal_value)
+    mm_mmmm = (decimal_value - int(decimal_value)) / 0.6
+    position = degrees + mm_mmmm
+    position = "%.4f" % (position)
+    return position
+'''
+
+
+
 
 while not exit:
+    '''
+    received_data = (str)(ser.readline())  # read NMEA string received
+    GPGGA_data_available = received_data.find(gpgga_info)  # check for NMEA GPGGA string
+    if (GPGGA_data_available > 0):
+        GPGGA_buffer = received_data.split("$GPGGA,", 1)[1]  # store data coming after "$GPGGA," string
+        NMEA_buff = (GPGGA_buffer.split(','))  # store comma separated data in buffer
+        GPS_Info()  # get time, latitude, longitude
+        # print("lat in degrees:", lat_in_degrees, " long in degree: ", long_in_degrees, '\n')
+    '''
     windowSurface.fill((0, 0, 0))
-    # x, y constantes for map to be centered
-    scale = max(maxx - minx, maxy - miny) / 5
+
+    if lat_in_degrees != 0:
+        # x, y constantes for map to be centered
+        scale = max(maxx - minx, maxy - miny) / 5
 
 
 
-    px = lat_in_degrees
-    py = long_in_degrees
-    px -= (maxx + minx) / 2
-    py -= (maxy + miny) / 2
-    px /= scale / 100
-    py /= scale / 58
-    py += 200
-    px += 200
-    movex = 400-px
-    movey = 240-py
+        px = lat_in_degrees
+        py = long_in_degrees
+        px -= (maxx + minx) / 2
+        py -= (maxy + miny) / 2
+        px /= scale / 100
+        py /= scale / 58
+        py += 200
+        px += 200
+        movex = 400-px
+        movey = 240-py
 
-    for i in range(0, len(poligoni)):
-        for j in range(0, len(poligoni[i])):
-            poligoni[i][j][0] += movex
-            poligoni[i][j][1] += movey
+        for i in range(0, len(poligoni)):
+            for j in range(0, len(poligoni[i])):
+                poligoni[i][j][0] += movex
+                poligoni[i][j][1] += movey
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             exit = True
@@ -206,6 +267,10 @@ while not exit:
     #buzz
     label = myfont2.render((str(buzz) + 's'), 1, (255, 255, 255))
     windowSurface.blit(label, (650, 50))
+
+    if lat_in_degrees == 0 or long_in_degrees == 0:
+        label = myfont2.render('Nav signāls! ', 1, (255, 0, 0))
+        windowSurface.blit(label, (250, 195))
     pygame.display.flip()
 
     # turn on buzzer if entered different polygon by id
@@ -218,8 +283,9 @@ while not exit:
         idTemp = id
     '''
 
+    if lat_in_degrees != 0:
+        for i in range(0, len(poligoni)):
+            for j in range(0, len(poligoni[i])):
+                poligoni[i][j][0] -= movex
+                poligoni[i][j][1] -= movey
 
-    for i in range(0, len(poligoni)):
-        for j in range(0, len(poligoni[i])):
-            poligoni[i][j][0] -= movex
-            poligoni[i][j][1] -= movey
