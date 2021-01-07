@@ -120,8 +120,8 @@ while not exit:
 
 
 
-        px = lat_in_degrees
-        py = long_in_degrees
+        px = float(lat_in_degrees)
+        py = float(long_in_degrees)
         px -= (maxx + minx) / 2
         py -= (maxy + miny) / 2
         px /= scale / 100
@@ -137,24 +137,30 @@ while not exit:
                 poligoni[i][j][1] += movey
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
             exit = True
 
         if event.type == pygame.MOUSEBUTTONUP:
             mouse = pygame.mouse.get_pos()  # mouse position
             click = pygame.mouse.get_pressed()  # determane if mouse clicked, format (0,0,0)
-            if (mouse[0] > 750 and mouse[0] < 800 and mouse[1] > 50 and mouse[1] < 100):
+            if (mouse[0] > 750 and mouse[0] <= 800 and mouse[1] > 50 and mouse[1] < 100):
                 if buzz < 4:
                     buzz *=2
-            elif (mouse[0] > 750 and mouse[0] < 800 and mouse[1] > 100 and mouse[1] < 150):
+                elif buzz == 0:
+                    buzz = 0.125
+            elif (mouse[0] > 750 and mouse[0] <= 800 and mouse[1] > 100 and mouse[1] < 150):
                 if buzz > 0.125:
                     buzz/=2
-            elif (mouse[0] > 0 and mouse[0] < 200 and mouse[1] > 0 and mouse[1] < 50):
+                else:
+                    buzz = 0
+            elif (mouse[0] >= 0 and mouse[0] < 200 and mouse[1] >= 0 and mouse[1] < 50):
                 izvele = 1
-            elif (mouse[0] > 200 and mouse[0] < 400 and mouse[1] > 0 and mouse[1] < 50):
+            elif (mouse[0] > 200 and mouse[0] < 400 and mouse[1] >= 0 and mouse[1] < 50):
                 izvele = 2
-            elif (mouse[0] > 400 and mouse[0] < 600 and mouse[1] > 0 and mouse[1] < 50):
+            elif (mouse[0] > 400 and mouse[0] < 600 and mouse[1] >= 0 and mouse[1] < 50):
                 izvele = 3
-            elif (mouse[0] > 600 and mouse[0] < 800 and mouse[1] > 0 and mouse[1] < 50):
+            elif (mouse[0] > 600 and mouse[0] <= 800 and mouse[1] >= 0 and mouse[1] < 50):
                     pygame.display.toggle_fullscreen()
 
     # construct point based on lon/lat returned by geocoder
