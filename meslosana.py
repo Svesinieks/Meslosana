@@ -3,7 +3,6 @@ import sys
 import json
 from shapely.geometry import shape, Point, Polygon
 from poligoni import poligoni, caMa, caMi, mapMa, mapMi, kclMa, kclMi
-
 import serial  # import serial pacakge
 import RPi.GPIO as GPIO
 from time import sleep
@@ -21,6 +20,15 @@ maxy = 21.157708785995734
 minx = 56.57136294966174
 miny = 21.149561136265678
 
+movex = 0
+movey = 0
+kclKgMain = 0
+kclProMain = 0
+caTHaMain = 0
+caProMain = 0
+mapKgMain = 0
+mapProMain = 0
+
 minCa = caMi
 maxCa = caMa
 maxMap = mapMa
@@ -32,6 +40,7 @@ pygame.init()
 windowSurface = pygame.display.set_mode((800, 480))
 
 myfont2 = pygame.font.SysFont("cambria", 50)
+myfont = pygame.font.SysFont("cambria", 100)
 
 
 #
@@ -46,8 +55,11 @@ GPGGA_buffer = 0
 NMEA_buff = 0
 
 #
+
 lat_in_degrees = 0
 long_in_degrees = 0
+
+
 #
 piln = myfont2.render('Pilnekr.', 1, (255, 255, 255))
 map = myfont2.render('MAP', 1, (255, 255, 255))
@@ -62,7 +74,7 @@ kclKilo = myfont2.render('KCl kg/ha', 1, (255, 255, 255))
 #
 izvele = 1
 exit = False
-
+drag = False
 
 def GPS_Info():
     global NMEA_buff
@@ -104,6 +116,7 @@ def convert_to_degrees(raw_value):
 
 while not exit:
 
+
     received_data = (str)(ser.readline())  # read NMEA string received
     GPGGA_data_available = received_data.find(gpgga_info)  # check for NMEA GPGGA string
     if (GPGGA_data_available > 0):
@@ -114,28 +127,12 @@ while not exit:
 
     windowSurface.fill((0, 0, 0))
 
-    if lat_in_degrees != 0:
-        # x, y constantes for map to be centered
-        scale = max(maxx - minx, maxy - miny) / 5
 
 
 
-        px = float(lat_in_degrees)
-        py = float(long_in_degrees)
-        px -= (maxx + minx) / 2
-        py -= (maxy + miny) / 2
-        px /= scale / 100
-        py /= scale / 58
-        py += 200
-        px += 200
-        movex = 400-px
-        movey = 240-py
-
-        for i in range(0, len(poligoni)):
-            for j in range(0, len(poligoni[i])):
-                poligoni[i][j][0] += movex
-                poligoni[i][j][1] += movey
     for event in pygame.event.get():
+        mouse = pygame.mouse.get_pos()  # mouse position
+        click = pygame.mouse.get_pressed()  # determane if mouse clicked, format (0,0,0)
         if event.type == pygame.QUIT:
             pygame.quit()
             sys.exit()
@@ -162,7 +159,33 @@ while not exit:
                 izvele = 3
             elif (mouse[0] > 600 and mouse[0] <= 800 and mouse[1] >= 0 and mouse[1] < 50):
                     pygame.display.toggle_fullscreen()
+        if (event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and mouse[0] >= 0 and mouse[0] <= 750 and mouse[1] >= 50 and mouse[1] <= 410  ):
+            if drag:
+                drag = False
+            else:
+                drag = True
+    if lat_in_degrees != 0:
+        # x, y constantes for map to be centered
+        scale = max(maxx - minx, maxy - miny) / 5
 
+        px = float(lat_in_degrees)
+        py = float(long_in_degrees)
+        px -= (maxx + minx) / 2
+        py -= (maxy + miny) / 2
+        px /= scale / 100
+        py /= scale / 58
+        py += 200
+        px += 200
+        if not drag:
+            movex = 400 - px
+            movey = 240 - py
+        else:
+            movex = ((mouse[0])-400 + 113)
+            movey = ((mouse[1])-240 - 9)
+    for i in range(0, len(poligoni)):
+        for j in range(0, len(poligoni[i])):
+            poligoni[i][j][0] += movex
+            poligoni[i][j][1] += movey
     # construct point based on lon/lat returned by geocoder
     point = Point(float(lat_in_degrees), float(long_in_degrees))
     with open('LaukiGeojson/Paraugu_dati.geojson') as f:
@@ -180,35 +203,19 @@ while not exit:
                 caPro = feature['properties']['ca%']
 
         if izvele == 1:
-            pygame.draw.rect(windowSurface, (60, 60, 60),
-                                 (0, 0, 200, 50))
-            windowSurface.blit(kclKilo, (5, 425))
-            windowSurface.blit(kclProF, (405, 425))
             kclKg = feature['properties']['kclkg/ha']
-            if polygon.contains(point):
-                    label = myfont2.render((str(kclKg)), 1, (255, 255, 255))
-                    windowSurface.blit(label, (300, 425))
-                    label = myfont2.render((str(kclPro)), 1, (255, 255, 255))
-                    windowSurface.blit(label, (700, 425))
             if kclKg == 0:
                 #laukumi[i] = list(np.array(laukumi[i]) + 10)
                 pygame.draw.polygon(windowSurface, (0, 0, 255), laukumi[i])
             else:
-                #laukumi[i] = list(np.array(laukumi[i]) + 10)
                 pygame.draw.polygon(windowSurface, (
                     (255 - ((1 / (kclMax - kclMin)) * (kclKg - kclMin)) * 255),
                     ((1 / (kclMax - minMap)) * (kclKg - kclMin)) * 255, 0), laukumi[i])
-        elif izvele == 2:
-            pygame.draw.rect(windowSurface, (60, 60, 60),
-                                 (200, 0, 200, 50))
-            catHa = feature['properties']['cat/ha']
-            windowSurface.blit(caT, (5, 425))
-            windowSurface.blit(caProF, (405, 425))
             if polygon.contains(point):
-                label = myfont2.render((str(catHa)), 1, (255, 255, 255))
-                windowSurface.blit(label, (300, 425))
-                label = myfont2.render((str(caPro)), 1, (255, 255, 255))
-                windowSurface.blit(label, (700, 425))
+                kclKgMain = kclKg
+                kclProMain = kclPro
+        elif izvele == 2:
+            catHa = feature['properties']['cat/ha']
             if catHa == 0:
                 pygame.draw.polygon(windowSurface, (0, 0, 255), laukumi[i])
             else:
@@ -216,23 +223,20 @@ while not exit:
                         (1 / (maxCa - minCa)) * (catHa - minCa)) * 255),
                                                      ((1 / (maxCa - minCa)) * (catHa - minCa)) * 255,
                                                      0), laukumi[i]))
-        elif izvele == 3:
-            pygame.draw.rect(windowSurface, (60, 60, 60),
-                                 (400, 0, 200, 50))
-            mapKg = feature['properties']['mapkg/h']
-            windowSurface.blit(mapKilo, (5, 425))
-            windowSurface.blit(mapProF, (405, 425))
             if polygon.contains(point):
-                label = myfont2.render((str(mapKg)), 1, (255, 255, 255))
-                windowSurface.blit(label, (300, 425))
-                label = myfont2.render((str(mapPro)), 1, (255, 255, 255))
-                windowSurface.blit(label, (700, 425))
+                caTHaMain = catHa
+                caProMain = caPro
+        elif izvele == 3:
+            mapKg = feature['properties']['mapkg/h']
             if mapKg == 0:
                 pygame.draw.polygon(windowSurface, (0, 0, 255), laukumi[i])
             else:
                 pygame.draw.polygon(windowSurface, ((255 - ((1 / (maxMap - minMap)) * (mapKg - minMap)) * 255),
                                                     ((1 / (maxMap - minMap)) * (mapKg - minMap)) * 255, 0),
                                     laukumi[i])
+            if polygon.contains(point):
+                mapKgMain = mapKg
+                mapProMain = mapPro
         i+=1
 
     for i in range(0, len(laukumi)):
@@ -242,7 +246,33 @@ while not exit:
             x = poligoni[i][j][0]
             y = poligoni[i][j][1]
 
-
+    if izvele == 1:
+        pygame.draw.rect(windowSurface, (60, 60, 60),
+                         (0, 0, 200, 50))
+        windowSurface.blit(kclKilo, (5, 420))
+        windowSurface.blit(kclProF, (405, 420))
+        label = myfont.render((str(kclKgMain)), 1, (255, 255, 255))
+        windowSurface.blit(label, (275, 410))
+        label = myfont.render((str(kclProMain)), 1, (255, 255, 255))
+        windowSurface.blit(label, (675, 410))
+    elif izvele == 2:
+        pygame.draw.rect(windowSurface, (60, 60, 60),
+                         (200, 0, 200, 50))
+        windowSurface.blit(caT, (5, 420))
+        windowSurface.blit(caProF, (405, 420))
+        label = myfont.render((str(caTHaMain)), 1, (255, 255, 255))
+        windowSurface.blit(label, (275, 410))
+        label = myfont.render((str(caProMain)), 1, (255, 255, 255))
+        windowSurface.blit(label, (675, 410))
+    elif izvele == 3:
+        pygame.draw.rect(windowSurface, (60, 60, 60),
+                         (400, 0, 200, 50))
+        windowSurface.blit(mapKilo, (5, 420))
+        windowSurface.blit(mapProF, (405, 420))
+        label = myfont.render((str(mapKgMain)), 1, (255, 255, 255))
+        windowSurface.blit(label, (275, 410))
+        label = myfont.render((str(mapProMain)), 1, (255, 255, 255))
+        windowSurface.blit(label, (675, 410))
 
     #izvele
     pygame.draw.line(windowSurface, (255, 255, 255), (0, 50), (800, 50), 2)
@@ -259,8 +289,8 @@ while not exit:
     pygame.draw.line(windowSurface, (255, 255, 255), (760, 125), (790, 125), 2)
 
     #kg %
-    pygame.draw.line(windowSurface, (255, 255, 255), (0, 430), (800, 430), 2)
-    pygame.draw.line(windowSurface, (255, 255, 255), (400, 430), (400, 480), 2)
+    pygame.draw.line(windowSurface, (255, 255, 255), (0, 410), (800, 410), 2)
+    pygame.draw.line(windowSurface, (255, 255, 255), (400, 410), (400, 480), 2)
 
     windowSurface.blit(piln, (605, 2))
     windowSurface.blit(ca, (205, 2))
@@ -270,8 +300,12 @@ while not exit:
     # centrs
     x = float(lat_in_degrees)
     y = float(long_in_degrees)
-    pygame.draw.circle(windowSurface, (10, 10, 10), (400, 240), 7)  # map centre
-    pygame.draw.circle(windowSurface, (255, 0, 255), (400, 240), 4)  # map centre
+    if not drag:
+        pygame.draw.circle(windowSurface, (10, 10, 10), (400, 240), 7)  # map centre
+        pygame.draw.circle(windowSurface, (255, 0, 255), (400, 240), 4)  # map centre
+    else:
+        pygame.draw.circle(windowSurface, (10, 10, 10), (400+movex-113, 240+movey+9), 7)  # map centre
+        pygame.draw.circle(windowSurface, (255, 0, 255), (400+movex-113, 240+movey+9), 4)  # map centre
 
     #buzz
     label = myfont2.render((str(buzz) + 's'), 1, (255, 255, 255))
@@ -280,6 +314,7 @@ while not exit:
     if lat_in_degrees == 0 or long_in_degrees == 0:
         label = myfont2.render('Nav signāls! ', 1, (255, 0, 0))
         windowSurface.blit(label, (250, 195))
+
     pygame.display.flip()
 
     # turn on buzzer if entered different polygon by id
