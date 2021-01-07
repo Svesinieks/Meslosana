@@ -1,7 +1,9 @@
 import json
 from openpyxl import load_workbook
+filename = str(input('Ievadi faila nosaukumu bez ".xlsl"\nFailam "ExcelValuesToGeoJSON.py" jāatrodas vienā mapē ar mapi LaukiGeojason,\nkurā atrodas "Paraugu_dati.geojson"\n==>  '))
 
-wb2 = load_workbook('2021p.xlsx')
+
+wb2 = load_workbook(filename+'.xlsx')
 ws = wb2.active
 
 

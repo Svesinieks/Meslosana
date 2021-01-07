@@ -147,7 +147,7 @@ while not exit:
             if (mouse[0] > 750 and mouse[0] <= 800 and mouse[1] > 50 and mouse[1] < 100):
                 if buzz < 4:
                     buzz *=2
-                elif buzz == 0:
+                if buzz == 0:
                     buzz = 0.125
             elif (mouse[0] > 750 and mouse[0] <= 800 and mouse[1] > 100 and mouse[1] < 150):
                 if buzz > 0.125:
