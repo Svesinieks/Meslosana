@@ -4,8 +4,8 @@ import json
 from shapely.geometry import shape, Point, Polygon
 from poligoni import poligoni, caMa, caMi, mapMa, mapMi, kclMa, kclMi
 
-#import serial  # import serial pacakge
-#import RPi.GPIO as GPIO
+import serial  # import serial pacakge
+import RPi.GPIO as GPIO
 from time import sleep
 
 laukumi = poligoni
@@ -35,7 +35,7 @@ myfont2 = pygame.font.SysFont("cambria", 50)
 
 
 #
-'''
+
 GPIO.setwarnings(False)  # No warning for GPIO already in use
 GPIO.setmode(GPIO.BCM)
 buzzer = 23  # buzzer connected to pin 23
@@ -44,10 +44,10 @@ gpgga_info = "$GPGGA,"
 ser = serial.Serial("/dev/ttyS0")  # Open port with baud rate
 GPGGA_buffer = 0
 NMEA_buff = 0
-'''
+
 #
-lat_in_degrees = 56.580603    #0
-long_in_degrees = 21.157510   #0
+lat_in_degrees = 0
+long_in_degrees = 0
 #
 piln = myfont2.render('Pilnekr.', 1, (255, 255, 255))
 map = myfont2.render('MAP', 1, (255, 255, 255))
@@ -63,7 +63,7 @@ kclKilo = myfont2.render('KCl kg/ha', 1, (255, 255, 255))
 izvele = 1
 exit = False
 
-'''
+
 def GPS_Info():
     global NMEA_buff
     global lat_in_degrees
@@ -97,13 +97,13 @@ def convert_to_degrees(raw_value):
     position = degrees + mm_mmmm
     position = "%.4f" % (position)
     return position
-'''
+
 
 
 
 
 while not exit:
-    '''
+
     received_data = (str)(ser.readline())  # read NMEA string received
     GPGGA_data_available = received_data.find(gpgga_info)  # check for NMEA GPGGA string
     if (GPGGA_data_available > 0):
@@ -111,7 +111,7 @@ while not exit:
         NMEA_buff = (GPGGA_buffer.split(','))  # store comma separated data in buffer
         GPS_Info()  # get time, latitude, longitude
         # print("lat in degrees:", lat_in_degrees, " long in degree: ", long_in_degrees, '\n')
-    '''
+
     windowSurface.fill((0, 0, 0))
 
     if lat_in_degrees != 0:
@@ -277,14 +277,14 @@ while not exit:
     pygame.display.flip()
 
     # turn on buzzer if entered different polygon by id
-    '''
+
     if (id != idTemp):
         GPIO.output(buzzer, GPIO.HIGH)
         sleep(buzz)
         GPIO.output(buzzer, GPIO.LOW)
         sleep(buzz)
         idTemp = id
-    '''
+
 
     if lat_in_degrees != 0:
         for i in range(0, len(poligoni)):
