@@ -1,7 +1,7 @@
 import json
 from openpyxl import load_workbook
 
-wb2 = load_workbook('Book1.xlsx')
+wb2 = load_workbook('2021p.xlsx')
 ws = wb2.active
 
 
@@ -10,7 +10,7 @@ with open('LaukiGeojson/Paraugu_dati.geojson', 'r+') as f:
 
     for i, feature in enumerate(data['features']):
         j = 2
-        while j <= 49:
+        while j <= 83:
             id = ws['A'+str(j)]
             if feature['properties']["ID"] == id.value:
                 print(feature['properties']["ID"],id.value)
